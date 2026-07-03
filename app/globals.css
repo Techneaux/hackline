@@ -1,0 +1,83 @@
+@import "tailwindcss";
+
+/* ── Aurora over the ice ─────────────────────────────────────────────
+   Light (default): "fresh snow" — near-white surfaces, deep-ink text.
+   Dark: night sky over a frozen lake, aurora accents.                 */
+
+:root {
+  --background: #f7fafd;
+  --surface: #ffffff;
+  --surface-raised: #eef4fb;
+  --border: #d5e0ee;
+  --foreground: #14213d;
+  --muted: #5b6c8f;
+  --accent: #0f9d6a;
+  --accent-2: #6353d6;
+  --gold: #b8860b; /* reserved for importance */
+  --danger: #d64560;
+  --aurora: linear-gradient(100deg, #0f9d6a14 0%, #6353d614 55%, transparent 90%);
+  --chart-1: #0f9d6a; /* validated for light surface */
+  --chart-2: #6353d6;
+}
+
+:root[data-theme="dark"] {
+  --background: #0b1026;
+  --surface: #101a3a;
+  --surface-raised: #16224c;
+  --border: #223059;
+  --foreground: #eaf2ff;
+  --muted: #8fa3cc;
+  --accent: #3ddc97; /* aurora teal */
+  --accent-2: #8b7bff; /* aurora violet */
+  --gold: #f5c84c;
+  --danger: #ff6b81;
+  --aurora: linear-gradient(100deg, #3ddc9722 0%, #8b7bff22 55%, transparent 90%);
+  --chart-1: #22a870; /* validated for dark surface */
+  --chart-2: #8b7bff;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-border: var(--border);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
+  --color-gold: var(--gold);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-space-grotesk);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-inter), system-ui, sans-serif;
+}
+
+/* Section labels styled like the printed HPP: small caps, tracked out. */
+.hpp-label {
+  font-family: var(--font-space-grotesk), sans-serif;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* "Hog line" rule between planner sections. */
+.hog-line {
+  border: 0;
+  border-top: 1px solid var(--border);
+  position: relative;
+}
+.hog-line::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: -1px;
+  width: 3rem;
+  border-top: 2px solid var(--accent);
+}
