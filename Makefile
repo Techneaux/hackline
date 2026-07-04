@@ -1,10 +1,7 @@
-# Hack Line — dev + launchd service management.
+# Hack Line — dev commands + Docker container management.
 # Run `make` (or `make help`) to list targets.
 
-LABEL   := com.hackline.app
-PLIST   := $(HOME)/Library/LaunchAgents/$(LABEL).plist
 PORT    ?= 3000
-LOG_DIR := data/logs
 
 # Load the Node version pinned in .nvmrc via nvm when available; otherwise fall
 # back to whatever `node` is on PATH. (The app needs Node 24 — see .nvmrc.)
@@ -12,7 +9,7 @@ NVM := export NVM_DIR="$${NVM_DIR:-$$HOME/.nvm}"; [ -s "$$NVM_DIR/nvm.sh" ] && .
 
 .DEFAULT_GOAL := help
 .PHONY: help deps dev build start-fg test typecheck \
-        install-service autostart start stop restart status logs uninstall-service
+        docker-up docker-down docker-logs docker-rebuild
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -38,31 +35,17 @@ test: ## Run the test suite (vitest)
 typecheck: ## Type-check without emitting
 	@$(NVM) npx tsc --noEmit
 
-## --- launchd background service (starts at login, auto-restarts) ---------
+## --- Docker (Rancher Desktop) --------------------------------------------
 
-install-service: ## Build + install/reload the launchd agent on :3000
-	@$(NVM) bash scripts/install-launchd.sh
+docker-up: ## Build (if needed) + start the container (port from .env HACKLINE_PORT)
+	@docker compose up -d --build
+	@port=$$(grep -sE '^HACKLINE_PORT=' .env | tail -1 | cut -d= -f2); echo "Running — http://localhost:$${port:-3000}"
 
-autostart: install-service ## Alias for install-service
+docker-down: ## Stop and remove the container
+	@docker compose down
 
-start: ## Start the background service (load the launchd agent)
-	@test -f "$(PLIST)" || { echo "No service installed — run 'make install-service' first."; exit 1; }
-	@launchctl load "$(PLIST)" && echo "Started — http://localhost:$(PORT)"
+docker-rebuild: ## Rebuild the image from scratch and restart
+	@docker compose build --no-cache && docker compose up -d
 
-stop: ## Stop the background service (unload the launchd agent)
-	@launchctl unload "$(PLIST)" 2>/dev/null && echo "Stopped." || echo "Not running."
-
-restart: stop start ## Restart the background service
-
-status: ## Show whether the service is running
-	@launchctl list | grep -q "$(LABEL)" \
-		&& echo "running (PID $$(launchctl list | awk '/$(LABEL)/{print $$1}'))" \
-		|| echo "not running"
-	@curl -fsS -o /dev/null -w "http :$(PORT) -> %{http_code}\n" http://localhost:$(PORT) 2>/dev/null || true
-
-logs: ## Tail the service's error log
-	@tail -f "$(LOG_DIR)/hackline.err.log"
-
-uninstall-service: ## Stop the service and remove its launchd plist
-	@launchctl unload "$(PLIST)" 2>/dev/null || true
-	@rm -f "$(PLIST)" && echo "Removed $(PLIST)"
+docker-logs: ## Tail the container logs
+	@docker compose logs -f

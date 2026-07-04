@@ -1,0 +1,20 @@
+services:
+  hackline:
+    build: .
+    image: hackline
+    container_name: hackline
+    ports:
+      # Bind to loopback only (like the old launchd agent's -H 127.0.0.1) so the
+      # auth-less planner isn't reachable from other devices on the LAN. Host port
+      # comes from HACKLINE_PORT in .env (default 3000); the container always
+      # listens on 3000 internally. Changing the host port requires updating the
+      # Google OAuth redirect URI to match — see .env / README.
+      - "127.0.0.1:${HACKLINE_PORT:-3000}:3000"
+    env_file:
+      # GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / TODOIST_API_TOKEN
+      - .env.local
+    volumes:
+      # Reuse the existing SQLite DB (connected accounts + journal history)
+      # instead of a fresh named volume.
+      - ./data:/app/data
+    restart: unless-stopped

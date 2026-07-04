@@ -18,16 +18,33 @@ npm run dev      # http://localhost:3000
 Background sync starts with the server (calendars and tasks every 15 min);
 the "Sync now" button in the Today page header forces a run.
 
-To run it permanently (starts at login, auto-restarts, production build on :3000):
+`make` (or `make help`) lists every target — `dev`, `build`, and `test` all run under
+the Node version pinned in `.nvmrc`.
+
+### Run it permanently (container — Rancher Desktop / Docker)
 
 ```bash
-make install-service   # build + install the launchd user agent
-make stop / make start # stop while developing, start again
-make status / make logs
+make docker-up      # docker compose up -d --build  → http://localhost:3000
+make docker-logs    # tail container logs
+make docker-down    # stop and remove
 ```
 
-`make` (or `make help`) lists every target — `dev`, `build`, `test`, and the service
-commands all run under the Node version pinned in `.nvmrc`.
+`restart: unless-stopped` in `docker-compose.yml` brings the container back on boot
+(as long as Rancher Desktop launches at login) and after crashes. Notes:
+
+- Secrets come from `.env.local` at runtime (via `env_file` in `docker-compose.yml`);
+  they're never baked into the image.
+- Your existing SQLite DB is bind-mounted (`./data:/app/data`), so connected accounts
+  and journal history carry over — no reconnecting Google, no lost entries.
+- The container binds **loopback only** (`127.0.0.1`), so the auth-less planner is
+  reachable from this Mac and nowhere on the LAN.
+- **Host port** is `HACKLINE_PORT` in `.env` (default 3000; the container always listens
+  on 3000 internally). If you change it, add
+  `http://localhost:<HACKLINE_PORT>/api/oauth/google/callback` as an authorized redirect
+  URI in Google Cloud Console — otherwise *connecting* a Google account fails. Already-connected
+  accounts keep syncing regardless (the redirect URI is only used at connect time).
+- Sync runs inside the container just like the local server. Don't run the container and a
+  local `npm run dev` at the same time — they'd write the same DB.
 
 Planner keyboard shortcuts: `←`/`→` (or `j`/`k`) move between days, `t` jumps to today.
 

@@ -1,0 +1,19 @@
+# Host node_modules is macOS-compiled (better-sqlite3) — never ship it into
+# the Linux image; it's reinstalled in the build stage.
+node_modules
+.next
+out
+build
+
+# Local data + secrets: mounted / injected at runtime, not baked into the image.
+data
+.env
+.env.*
+
+.git
+.gitignore
+*.log
+.DS_Store
+coverage
+examples-to-copy
+.claude

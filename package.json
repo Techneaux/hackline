@@ -6,8 +6,7 @@
     "dev": "next dev -H 127.0.0.1",
     "build": "next build",
     "start": "next start -H 127.0.0.1",
-    "test": "vitest run",
-    "autostart": "bash scripts/install-launchd.sh"
+    "test": "vitest run"
   },
   "dependencies": {
     "better-sqlite3": "^12.11.1",
