@@ -8,6 +8,7 @@ export interface MustDoItem {
   taskId?: number;
   text?: string;
   done: boolean;
+  list?: "home" | "work"; // which Todoist priority list it was pulled from
 }
 
 export interface ConnectItem {

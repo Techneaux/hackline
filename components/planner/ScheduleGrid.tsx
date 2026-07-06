@@ -102,37 +102,50 @@ export default function ScheduleGrid({ dayBounds }: { dayBounds: { from: string;
           </div>
         </div>
       )}
-      <div className="divide-y divide-border/50">
-        {SLOTS.map((slot) => {
-          const slotEvents = eventsBySlot.get(slot) ?? [];
-          return (
-            <div key={slot} className="group flex min-h-9 items-start gap-2 py-0.5">
-              <span className="w-14 shrink-0 pt-2 text-right text-[11px] tabular-nums text-muted">
-                {slotLabel(slot)}
-              </span>
-              <div className="min-w-0 flex-1">
-                {slotEvents.map((e) => (
-                  <div
-                    key={e.id}
-                    className="mt-1 flex items-center gap-2 rounded-md border-l-2 bg-surface-raised px-2 py-1 text-xs"
-                    style={{ borderLeftColor: e.color }}
-                    title={`${e.calendarLabel} · ${new Date(e.startTs).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}–${new Date(e.endTs).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`}
-                  >
-                    <span className="truncate">{e.title}</span>
+      {/* Only render slots that hold an event. */}
+      {(() => {
+        const visibleSlots = SLOTS.filter((slot) => (eventsBySlot.get(slot)?.length ?? 0) > 0);
+        if (visibleSlots.length === 0) {
+          // Stay silent when all-day events are shown above — "No events
+          // scheduled." would contradict them; it only fits a truly empty day.
+          return allDayEvents.length === 0 ? (
+            <p className="py-2 text-xs text-muted">No events scheduled.</p>
+          ) : null;
+        }
+        return (
+          <div className="divide-y divide-border/50">
+            {visibleSlots.map((slot) => {
+              const slotEvents = eventsBySlot.get(slot) ?? [];
+              return (
+                <div key={slot} className="group flex min-h-9 items-start gap-2 py-0.5">
+                  <span className="w-14 shrink-0 pt-2 text-right text-[11px] tabular-nums text-muted">
+                    {slotLabel(slot)}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    {slotEvents.map((e) => (
+                      <div
+                        key={e.id}
+                        className="mt-1 flex items-center gap-2 rounded-md border-l-2 bg-surface-raised px-2 py-1 text-xs"
+                        style={{ borderLeftColor: e.color }}
+                        title={`${e.calendarLabel} · ${new Date(e.startTs).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}–${new Date(e.endTs).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`}
+                      >
+                        <span className="truncate">{e.title}</span>
+                      </div>
+                    ))}
+                    <AutosaveText
+                      value={day.scheduleNotes[slot] ?? ""}
+                      onChange={(v) =>
+                        update({ scheduleNotes: { ...day.scheduleNotes, [slot]: v } })
+                      }
+                      className="!py-1 text-xs"
+                    />
                   </div>
-                ))}
-                <AutosaveText
-                  value={day.scheduleNotes[slot] ?? ""}
-                  onChange={(v) =>
-                    update({ scheduleNotes: { ...day.scheduleNotes, [slot]: v } })
-                  }
-                  className="!py-1 text-xs"
-                />
-              </div>
-            </div>
-          );
-        })}
-      </div>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })()}
     </div>
   );
 }

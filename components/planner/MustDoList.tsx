@@ -36,6 +36,12 @@ export default function MustDoList() {
     return m;
   }, [homeTasks, workTasks]);
 
+  const groups = useMemo(() => {
+    const g: Record<"work" | "home" | "other", MustDoItem[]> = { work: [], home: [], other: [] };
+    for (const item of items) g[item.list ?? "other"].push(item);
+    return g;
+  }, [items]);
+
   const pickerTasks = picker === "home" ? homeTasks : picker === "work" ? workTasks : undefined;
   const pickerError = picker === "home" ? homeErr : picker === "work" ? workErr : undefined;
   const available = useMemo(() => {
@@ -70,6 +76,7 @@ export default function MustDoList() {
       id: crypto.randomUUID(),
       taskId,
       done: false,
+      list: picker ?? undefined,
     }));
     setItems([...items, ...additions]);
     flush();
@@ -106,36 +113,57 @@ export default function MustDoList() {
       picker === list ? "border-accent text-foreground" : "border-border text-muted"
     }`;
 
+  function renderItem(item: MustDoItem) {
+    return (
+      <li key={item.id} className="group flex items-center gap-2.5">
+        <span
+          className="h-1.5 w-1.5 shrink-0 rounded-full"
+          style={{ background: "var(--gold)" }}
+          aria-hidden
+        />
+        <span className="flex-1 text-sm">
+          {labelFor(item)}
+          {item.taskId && <span className="ml-1.5 text-[10px] text-muted">Todoist</span>}
+        </span>
+        <button
+          onClick={() => {
+            setItems(items.filter((i) => i.id !== item.id));
+            flush();
+          }}
+          className="invisible text-xs text-muted hover:text-danger group-hover:visible"
+          aria-label="Remove"
+        >
+          ✕
+        </button>
+      </li>
+    );
+  }
+
+  // Rendered in a fixed order; a group only appears once it has items.
+  const sections: { key: "work" | "home" | "other"; label: string }[] = [
+    { key: "work", label: "Work" },
+    { key: "home", label: "Home" },
+    { key: "other", label: "Other" },
+  ];
+
   return (
     <div>
-      <ul className="space-y-1.5">
-        {items.map((item) => (
-          <li key={item.id} className="group flex items-center gap-2.5">
-            <span
-              className="h-1.5 w-1.5 shrink-0 rounded-full"
-              style={{ background: "var(--gold)" }}
-              aria-hidden
-            />
-            <span className="flex-1 text-sm">
-              {labelFor(item)}
-              {item.taskId && <span className="ml-1.5 text-[10px] text-muted">Todoist</span>}
-            </span>
-            <button
-              onClick={() => {
-                setItems(items.filter((i) => i.id !== item.id));
-                flush();
-              }}
-              className="invisible text-xs text-muted hover:text-danger group-hover:visible"
-              aria-label="Remove"
-            >
-              ✕
-            </button>
-          </li>
-        ))}
-        {items.length === 0 && (
-          <li className="text-sm text-muted">No must-dos yet — pull some in from Todoist.</li>
-        )}
-      </ul>
+      {items.length === 0 ? (
+        <p className="text-sm text-muted">No must-dos yet — pull some in from Todoist.</p>
+      ) : (
+        <div className="space-y-3">
+          {sections.map(({ key, label }) =>
+            groups[key].length === 0 ? null : (
+              <div key={key}>
+                <h4 className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted">
+                  {label}
+                </h4>
+                <ul className="space-y-1.5">{groups[key].map(renderItem)}</ul>
+              </div>
+            ),
+          )}
+        </div>
+      )}
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <button onClick={() => openPicker("home")} className={pickerBtn("home", "home")}>
